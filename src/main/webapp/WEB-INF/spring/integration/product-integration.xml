@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns:int="http://www.springframework.org/schema/integration"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:int-stream="http://www.springframework.org/schema/integration/stream"
+	xmlns:int-http="http://www.springframework.org/schema/integration/http"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/integration
+		http://www.springframework.org/schema/integration/spring-integration.xsd
+		http://www.springframework.org/schema/integration/stream
+		http://www.springframework.org/schema/integration/stream/spring-integration-stream.xsd
+		http://www.springframework.org/schema/integration/http
+		http://www.springframework.org/schema/integration/http/spring-integration-http.xsd
+		http://www.springframework.org/schema/task
+		http://www.springframework.org/schema/task/spring-task.xsd" >
+
+	<int:annotation-config/>
+	<context:component-scan base-package="com.amb.splitteraggregator"/>
+	
+	<!-- POST -->
+	<int-http:inbound-gateway request-channel="gatewayProductRequests"
+		reply-channel="gatewayProductResponses"
+		supported-methods="POST" 
+		path="/product"
+		request-payload-type="java.lang.String">
+
+		<int-http:request-mapping consumes="application/xml" produces="application/xml"/>
+	</int-http:inbound-gateway>
+
+	<int:channel id="gatewayProductResponses" />
+	<int:channel id="validatedProductRequests" />
+	<int:channel id="upstreamProductResponses" />
+	<int:channel id="downStreamProductRequests" />
+	<int:channel id="downStreamRawProductsAndRequest" />
+	<int:channel id="downStreamProductRequestBatches">
+		<int:dispatcher task-executor="productRequestBatchParallelizer" />
+	</int:channel>
+	<int:channel id="compositeMessagesWithResponse" />
+	<int:channel id="compositeMessagesForAggregation" />
+	<int:channel id="compositeMessagesWithRawProductsAndRequestOrResponse" />
+	
+	<task:executor id="productRequestBatchParallelizer" pool-size="1000" queue-capacity="100" />
+	
+</beans:beans>
